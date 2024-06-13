@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create and Share Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+        }
+        .result {
+            margin-top: 20px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Buat Acara</h1>
+        <div class="form-group">
+            <label for="pageTitle">Judul</label>
+            <input type="text" id="pageTitle">
+        </div>
+        <div class="form-group">
+            <label for="pageContent">Deskripsi</label>
+            <textarea id="pageContent" rows="10"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="countdownDate">Set Waktu</label>
+            <input type="datetime-local" id="countdownDate">
+        </div>
+        <button onclick="createPage()">Buat Acara</button>
+        <button onclick="savePage()">Simpan Halaman</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+        let pageContent = '';
+
+        function generateRandomString(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * characters.length);
+                result += characters[randomIndex];
+            }
+            return result;
+        }
+
+        function createPage() {
+            const title = document.getElementById('pageTitle').value;
+            const content = document.getElementById('pageContent').value;
+            const countdownDate = new Date(document.getElementById('countdownDate').value);
+
+            pageContent = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${title}</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 20px;
+                            text-align: center;
+                        }
+                        .countdown {
+                            font-size: 2em;
+                            margin-top: 20px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>${title}</h1>
+                    <p>${content}</p>
+                    <div class="countdown" id="countdown"></div>
+                    <script>
+                        const countdownDate = new Date("${countdownDate.toISOString()}").getTime();
+                        const countdownElement = document.getElementById('countdown');
+
+                        if (Notification.permission !== 'granted') {
+                            Notification.requestPermission();
+                        }
+
+                        function notifyMe() {
+                            if (Notification.permission === 'granted') {
+                                new Notification('${title}', {
+                                    body: 'Hitung mundur selesai kawanku',
+                                });
+                            }
+                        }
+
+                        function updateCountdown() {
+                            const now = new Date().getTime();
+                            const distance = countdownDate - now;
+
+                            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                            countdownElement.innerHTML = \`Selesai: \${days}d \${hours}h \${minutes}m \${seconds}s\`;
+
+                            if (distance < 0) {
+                                clearInterval(countdownInterval);
+                                countdownElement.innerHTML = 'Waktunya Habis';
+                                notifyMe();
+                            }
+                        }
+
+                        const countdownInterval = setInterval(updateCountdown, 1000);
+                        updateCountdown();
+                    <\/script>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([pageContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const resultDiv = document.getElementById('result');
+
+            resultDiv.innerHTML = `<a href="${url}" target="_blank">Buka Halaman</a>`;
+        }
+
+        function savePage() {
+            if (pageContent) {
+                const randomFileName = generateRandomString(6) + '.html';
+                const blob = new Blob([pageContent], { type: 'text/html' });
+                saveAs(blob, randomFileName);
+            } else {
+                alert('Buat Halaman Dahulu');
+            }
+        }
+    </script>
+</body>
+</html>
